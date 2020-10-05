@@ -1,0 +1,310 @@
+model Tanzania_scenario1
+use Mars 
+layer Grassland 
+
+// this is the farm agent
+agent farm on Grassland {
+	observe external var Farm_id : integer = 0
+	external var dist_market : real = 0.0
+	external var hhh_yr_sch : real = 0.0
+	external var hhh_exp : real = 0.0
+	observe external var peak_bst : real = 0.0
+    external var lt_sld : real = 0.0
+    external var bulk_sale : real = 0.0
+	external var hh_member : real = 0
+	external var freq_water : integer = 0
+	external var dist : real = 0.0
+	external var ex_grazing_dry : integer = 0 
+	external var ex_grazing_rn : integer = 0
+	external var mainly_grazing_rn : integer = 0
+	external var mainly_grazing_dr : integer = 0
+	external var mainly_stall_dry : integer = 0
+	external var mainly_stall_rn : integer = 0
+	external var pref_brd_mthd : integer = 0
+	external var sp_dist : real = 0
+	external var dew_tms : integer = 0
+	external var vacc_freq : integer = 0
+	external var no_mlk_cws : integer = 0
+	external var total_cattle : integer = 0
+	external var total_land : real = 0.0
+	external var area_fodder : real = 0.0
+	external var dist_byr : real = 0.0
+	external var dew_sp_self : integer = 0
+	external var trning_days : integer = 0
+	external var breed_type : integer
+	external var mnths_cropresidue : integer = 0
+	external var mnths_concentra : integer = 0
+	external var mnth_purc_fodder : integer = 0
+	external var freq_extension_visit : integer = 0
+	external var no_emp : integer = 0
+	external var affd_suppl : string 
+	external var cluster : integer = 0
+	observe var predicted_milk : real = 0.0
+	observe var count_interact: integer = 0
+	observe var sstot: real = 0.0
+	observe var ssres: real = 0.0
+	var isAlive : bool = true 
+	
+	
+	//initializing the farm households in random locations within specified grid limits
+	initialize(){
+		pos at #(random(150),random(150))
+	}  
+	 
+	tick {
+		
+	//first self assessment: agent farm is trying to predict its yield based on it's parameter values
+	
+	
+		predicted_milk = -0.0389 - 0.14*vacc_freq + 0.37*freq_water -0.06*total_land -0.21*area_fodder -0.27*mainly_stall_dry -0.27*mainly_stall_rn 
+		-0.08*no_mlk_cws -0.35*pref_brd_mthd +0.12*mainly_grazing_dr +0.12*mainly_grazing_rn -0.88*no_emp -0.03*mnth_purc_fodder +0.05*total_cattle
+		+0.03*hhh_exp -0.03*trning_days +0.17*hhh_yr_sch +0.91*hh_member -0.0001*bulk_sale +0.27*lt_sld +0.48*mnths_cropresidue -0.002*dist_byr
+		+0.05*dist  +0.005*freq_extension_visit +0.02*sp_dist +0.05*dist_market +3.089
+	
+	//after one month 
+	//if yield is low than the farm type average, this agents tries to adjust it's, feeding, breeding method and vacc_freq (majority of farmers in Ethiopia vacc)
+	if (simtime >= 30){
+		if ((peak_bst <= 12.72) or (predicted_milk <= 17.65)) {
+		var nearestfarm = nearest farm
+		move to nearestfarm
+		if (nearestfarm.Getpredicted_milk > predicted_milk){
+			
+			if (vacc_freq < nearestfarm.Getvacc()){
+				vacc_freq = nearestfarm.Getvacc()
+				count_interact = count_interact + 1
+			}
+			if (freq_water < nearestfarm.Getfreq()){
+				freq_water = nearestfarm.Getfreq()
+				count_interact = count_interact + 1
+			}
+			if (mainly_stall_dry > nearestfarm.Getstall()){
+				mainly_stall_dry = nearestfarm.Getstall()
+				count_interact = count_interact + 1
+			}
+			if (mainly_stall_rn > nearestfarm.Getstall2()){
+				mainly_stall_rn = nearestfarm.Getstall2()
+				count_interact = count_interact + 1
+			}
+			if (pref_brd_mthd > nearestfarm.Getbreeding()){
+				pref_brd_mthd = nearestfarm.Getbreeding()
+				count_interact = count_interact + 1
+			}
+			if (mainly_grazing_dr < nearestfarm.Getgrazing()){
+				mainly_grazing_dr = nearestfarm.Getgrazing()
+				count_interact = count_interact + 1
+			}
+			if (mainly_grazing_rn < nearestfarm.Getgrazing2()){
+				mainly_grazing_rn = nearestfarm.Getgrazing2()
+				count_interact = count_interact + 1
+			}
+			if (no_emp > nearestfarm.Getlabor()){
+				no_emp = nearestfarm.Getlabor()
+				count_interact = count_interact + 1
+			}
+			if (mnth_purc_fodder > nearestfarm.Getpurchfodder()){
+				mnth_purc_fodder = nearestfarm.Getpurchfodder()
+				count_interact = count_interact + 1
+			}
+			}
+		
+		//then predicts again, in each tick this procedure is executed until the agent yield is greater than that of the farm type average
+		predicted_milk = -0.0389 - 0.14*vacc_freq + 0.37*freq_water -0.06*total_land -0.21*area_fodder -0.27*mainly_stall_dry -0.27*mainly_stall_dry 
+		-0.08*no_mlk_cws -0.35*pref_brd_mthd +0.12*mainly_grazing_dr +0.12*mainly_grazing_rn -0.88*no_emp -0.03*mnth_purc_fodder +0.05*total_cattle
+		+0.03*hhh_exp -0.03*trning_days +0.17*hhh_yr_sch +0.91*hh_member -0.0001*bulk_sale +0.27*lt_sld +0.48*mnths_cropresidue -0.002*dist_byr
+		+0.05*dist  +0.005*freq_extension_visit +0.02*sp_dist +0.05*dist_market +3.089
+	                         }
+	         move to #(random(150),random(150))
+	}
+	//after working on the farm characteristics
+	if (simtime >= 146){
+		if ((peak_bst <= 17.65) or (predicted_milk <= 17.65)){
+			var nearestfarm = nearest farm
+		    move to nearestfarm
+		    if (nearestfarm.Getpredicted_milk > predicted_milk){
+			if (mnths_cropresidue > nearestfarm.Getcropresidue()){
+				mnths_cropresidue = nearestfarm.Getcropresidue()
+				count_interact = count_interact + 1
+			}
+			}
+	
+	    predicted_milk = -0.0389 - 0.14*vacc_freq + 0.37*freq_water -0.06*total_land -0.21*area_fodder -0.27*mainly_stall_dry -0.27*mainly_stall_dry 
+		-0.08*no_mlk_cws -0.35*pref_brd_mthd +0.12*mainly_grazing_rn +0.12*mainly_grazing_rn -0.88*no_emp -0.03*mnth_purc_fodder +0.05*total_cattle
+		+0.03*hhh_exp -0.03*trning_days +0.17*hhh_yr_sch +0.91*hh_member -0.0001*bulk_sale +0.27*lt_sld +0.48*mnths_cropresidue -0.002*dist_byr
+		+0.05*dist  +0.005*freq_extension_visit +0.02*sp_dist +0.05*dist_market +3.089
+		   
+		}
+		move to #(random (150), random(150))
+	}
+	//after working on the income characteristics
+	if (simtime > 291){
+		if ((peak_bst <= 20.00) or (predicted_milk <= 17.65)){
+			var nearestfarm = nearest farm
+		    move to nearestfarm
+		    if (nearestfarm.Getpredicted_milk > predicted_milk){
+		    if (freq_extension_visit < nearestfarm.Getextension()){
+				freq_extension_visit = nearestfarm.Getextension()
+				count_interact = count_interact + 1
+			}
+			}
+			
+		predicted_milk = -0.0389 - 0.14*vacc_freq + 0.37*freq_water -0.06*total_land -0.21*area_fodder -0.27*mainly_stall_dry -0.27*mainly_stall_dry 
+		-0.08*no_mlk_cws -0.35*pref_brd_mthd +0.12*mainly_grazing_rn +0.12*mainly_grazing_rn -0.88*no_emp -0.03*mnth_purc_fodder +0.05*total_cattle
+		+0.03*hhh_exp -0.03*trning_days +0.17*hhh_yr_sch +0.91*hh_member -0.0001*bulk_sale +0.27*lt_sld +0.48*mnths_cropresidue -0.002*dist_byr
+		+0.05*dist  +0.005*freq_extension_visit +0.02*sp_dist +0.05*dist_market +3.089
+		
+		}
+		move to #(random (150), random(150))
+		
+		if (simtime > 436){
+		if ((peak_bst <= 20.00) or (predicted_milk <= 20.00)){
+		    var nearestfarm = nearest farm
+		    move to nearestfarm
+		    if (nearestfarm.Getpredicted_milk > predicted_milk){
+		    if (trning_days < nearestfarm.Getstraining()){
+				trning_days = nearestfarm.Getstraining()
+				count_interact = count_interact + 1
+			}
+			 if (hh_member < nearestfarm.Getmember()){
+				hh_member = nearestfarm.Getmember()
+				count_interact = count_interact + 1
+			}
+			}       
+			}                      
+		 
+		if (simtime >= 581){
+			var nearestfarm = nearest farm
+		    move to nearestfarm
+		    if (nearestfarm.Getpredicted_milk() > predicted_milk){
+		    	if (vacc_freq < nearestfarm.Getvacc()){
+				vacc_freq = nearestfarm.Getvacc()
+				count_interact = count_interact + 1
+			}
+			if (freq_water < nearestfarm.Getfreq()){
+				freq_water = nearestfarm.Getfreq()
+				count_interact = count_interact + 1
+			}
+			if (mainly_stall_dry > nearestfarm.Getstall()){
+				mainly_stall_dry = nearestfarm.Getstall()
+				count_interact = count_interact + 1
+			}
+			if (mainly_stall_rn > nearestfarm.Getstall2()){
+				mainly_stall_rn = nearestfarm.Getstall2()
+				count_interact = count_interact + 1
+			}
+			if (pref_brd_mthd > nearestfarm.Getbreeding()){
+				pref_brd_mthd = nearestfarm.Getbreeding()
+				count_interact = count_interact + 1
+			}
+			if (mainly_grazing_dr < nearestfarm.Getgrazing()){
+				mainly_grazing_dr = nearestfarm.Getgrazing()
+				count_interact = count_interact + 1
+			}
+			if (mainly_grazing_rn < nearestfarm.Getgrazing2()){
+				mainly_grazing_rn = nearestfarm.Getgrazing2()
+				count_interact = count_interact + 1
+			}
+			if (no_emp > nearestfarm.Getlabor()){
+				no_emp = nearestfarm.Getlabor()
+				count_interact = count_interact + 1
+			}
+			if (mnth_purc_fodder > nearestfarm.Getpurchfodder()){
+				mnth_purc_fodder = nearestfarm.Getpurchfodder()
+				count_interact = count_interact + 1
+			}
+		    if (mnths_cropresidue > nearestfarm.Getcropresidue()){
+				mnths_cropresidue = nearestfarm.Getcropresidue()
+				count_interact = count_interact + 1
+			}
+			 if (freq_extension_visit < nearestfarm.Getextension()){
+				freq_extension_visit = nearestfarm.Getextension()
+				count_interact = count_interact + 1
+			}
+			 if (trning_days < nearestfarm.Getstraining()){
+				trning_days = nearestfarm.Getstraining()
+				count_interact = count_interact + 1
+			}
+			 if (hh_member < nearestfarm.Getmember()){
+				hh_member = nearestfarm.Getmember()
+				count_interact = count_interact + 1
+			}
+		    
+		
+		predicted_milk = -0.0389 - 0.14*vacc_freq + 0.37*freq_water -0.06*total_land -0.21*area_fodder -0.27*mainly_stall_dry -0.27*mainly_stall_dry 
+		-0.08*no_mlk_cws -0.35*pref_brd_mthd +0.12*mainly_grazing_rn +0.12*mainly_grazing_rn -0.88*no_emp -0.03*mnth_purc_fodder +0.05*total_cattle
+		+0.03*hhh_exp -0.03*trning_days +0.17*hhh_yr_sch +0.91*hh_member -0.0001*bulk_sale +0.27*lt_sld +0.48*mnths_cropresidue -0.002*dist_byr
+		+0.05*dist  +0.005*freq_extension_visit +0.02*sp_dist +0.05*dist_market +3.089	
+		
+		}
+		move to #(random (150), random(150))
+	     
+	     }
+	     }
+	     }
+	      //Sum of square differences
+          sstot = (peak_bst - 12.72) * (peak_bst - 12.72)
+          ssres = (peak_bst - predicted_milk) * (peak_bst - predicted_milk)
+	     }
+	      
+	var Mailbox : List <string>
+	
+    def SendMail(message : string){
+    	Mailbox.Add(message)
+    }
+	
+	def SendMail() : List <string>{
+		return Mailbox
+	}
+	
+	passive Getpredicted_milk(): real {
+		return predicted_milk
+	}
+	passive Getdist(): real{
+		return dist_market
+	}
+	passive Getmember() : real {
+		return hh_member
+	}
+	passive Getlabor() : integer {
+		return no_emp
+	}
+	passive Getvacc() : integer {
+		return vacc_freq
+	}
+	passive Getfreq() : integer {
+		return freq_water
+	}
+	passive Getconce() : integer {
+		return mnths_concentra
+	}
+	passive Getpurchfodder() : integer {
+		return mnth_purc_fodder
+	}
+	passive Getcropresidue() : integer {
+		return mnths_cropresidue 
+	}
+	passive Getdew() : integer {
+		return dew_tms
+	}
+	passive Getbreeding() : integer {
+		return pref_brd_mthd
+	}
+	passive Getstall() : integer {
+		return mainly_stall_dry 
+	}
+	passive Getgrazing() : integer {
+		return mainly_grazing_dr
+	}
+	passive Getgrazing2() : integer {
+		return mainly_grazing_rn
+	}
+	passive Getstall2() : integer {
+		return  mainly_stall_rn
+	}
+	passive Getstraining() : integer {
+		return  trning_days
+	}
+	passive Getextension() : integer {
+		return  freq_extension_visit
+	}
+	
+}
